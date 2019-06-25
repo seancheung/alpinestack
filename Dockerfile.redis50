@@ -1,0 +1,23 @@
+FROM alpine:3.10
+LABEL maintainer="Sean Cheung <theoxuanx@gmail.com>"
+
+ARG CN_MIRROR=false
+RUN if [ "$CN_MIRROR" = true ]; then sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories; fi
+
+RUN set -x \
+    && echo "Install Dependencies..." \
+    && apk add --no-cache redis \
+    && for path in \
+		/var/run/redis \
+		/var/log/redis \
+		/var/opt/redis \
+	; do \
+	mkdir -p "$path"; \
+    chown redis:redis "$path"; \
+	done
+COPY redis.conf /etc/redis.conf
+
+VOLUME ["/var/opt/redis"]
+EXPOSE 6379
+
+CMD ["/usr/bin/redis-server", "/etc/redis.conf"]

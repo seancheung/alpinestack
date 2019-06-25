@@ -1,0 +1,23 @@
+FROM seancheung/alpinestack:redis
+LABEL maintainer="Sean Cheung <theoxuanx@gmail.com>"
+
+ARG CN_MIRROR=false
+RUN if [ "$CN_MIRROR" = true ]; then \
+		sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories \
+		&& echo 'registry=https://registry.npm.taobao.org' > /root/.npmrc \
+	; fi
+
+RUN set -x \
+    && echo "Install Dependencies..." \
+	&& apk add --no-cache supervisor nodejs nodejs-npm \
+	&& npm -g i --unsafe-perm redis-commander \
+	&& mkdir -p /etc/supervisor/conf.d
+
+COPY supervisord.conf /etc/
+COPY supervisor/redis.conf /etc/supervisor/conf.d/
+COPY supervisor-dev/redis-commander.conf /etc/supervisor/conf.d/
+
+VOLUME ["/etc/supervisor/conf.d"]
+EXPOSE 8081
+
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]

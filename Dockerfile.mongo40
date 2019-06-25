@@ -1,0 +1,25 @@
+FROM alpine:3.10
+LABEL maintainer="Sean Cheung <theoxuanx@gmail.com>"
+
+ARG CN_MIRROR=false
+RUN echo 'http://dl-cdn.alpinelinux.org/alpine/v3.9/main' >> /etc/apk/repositories
+RUN echo 'http://dl-cdn.alpinelinux.org/alpine/v3.9/community' >> /etc/apk/repositories
+RUN if [ "$CN_MIRROR" = true ]; then sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories; fi
+
+RUN set -x \
+    && echo "Install Dependencies..." \
+    && apk add --no-cache mongodb \
+    && for path in \
+		/var/run/mongodb \
+		/var/log/mongodb \
+		/var/opt/mongodb \
+	; do \
+	mkdir -p "$path"; \
+    chown mongodb:mongodb "$path"; \
+	done
+COPY mongod.conf /etc/mongod.conf
+
+VOLUME ["/var/opt/mongodb"]
+EXPOSE 27017
+
+CMD ["/usr/bin/mongod", "-f", "/etc/mongod.conf"]

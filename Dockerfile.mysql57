@@ -1,0 +1,25 @@
+FROM alpine:3.10
+LABEL maintainer="Sean Cheung <theoxuanx@gmail.com>"
+
+ARG CN_MIRROR=false
+RUN if [ "$CN_MIRROR" = true ]; then sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories; fi
+
+RUN set -x \
+    && echo "Install Dependencies..." \
+    && apk add --no-cache mysql bash \
+    && for path in \
+		/var/run/mysql \
+		/var/log/mysql \
+		/var/opt/mysql \
+	; do \
+	mkdir -p "$path"; \
+    chown mysql:mysql "$path"; \
+	done
+COPY mysql.sh /entrypoint.sh
+COPY my.cnf /etc/my.cnf
+
+VOLUME ["/var/opt/mysql"]
+EXPOSE 3306
+
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["/usr/bin/mysqld_safe"]
